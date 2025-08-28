@@ -19,18 +19,11 @@ Un générateur automatisé d'attestations de formation en PDF utilisant JavaScr
 - `Attestation Ngazidja Mr.png` - Template pour les hommes
 - `Attestation Ngazidja Mme.png` - Template pour les femmes
 
-### Navigateur web moderne supportant :
-- Canvas API
-- ES6 JavaScript
-- Local file access
-
 ## 🚀 Installation et Utilisation
 
 ### 1. Préparation des fichiers
 
 **Étape 1 :** Placez les templates d'attestation dans le dossier :
-- `Attestation Ngazidja Mr.png` (pour les hommes)
-- `Attestation Ngazidja Mme.png` (pour les femmes)
 
 **Étape 2 :** Configurez vos données dans `leadersnames.js` :
 ```javascript
@@ -180,3 +173,4 @@ Ce projet est libre d'utilisation pour des fins éducatives et non commerciales.
 ---
 
 *Dernière mise à jour : Août 2025*
+
