@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur d'Attestations</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="leadersnames.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress {
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .info {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .canvas-container {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+        }
+        
+        canvas {
+            border: 1px solid #ccc;
+        }
+        
+        .log {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 Générateur d'Attestations de Formation</h1>
+        
+        <div class="info">
+            <h3>📋 Instructions:</h3>
+            <ul>
+                <li>Les images PNG des attestations doivent être dans le même dossier</li>
+                <li>Cliquez sur "Générer PDF" pour créer toutes les attestations</li>
+                <li>Le PDF sera téléchargé automatiquement une fois généré</li>
+            </ul>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <span class="stat-number" id="totalNames">0</span>
+                <span class="stat-label">Total des noms</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="femaleCount">0</span>
+                <span class="stat-label">Femmes (Mme.)</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="maleCount">0</span>
+                <span class="stat-label">Hommes (Mr.)</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="generateBtn" onclick="generatePDF()">
+                📄 Générer le PDF des Attestations
+            </button>
+        </div>
+        
+        <div class="progress" id="progressContainer">
+            <p id="progressText">Génération en cours...</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="progressDetail">Préparation...</p>
+        </div>
+        
+        <div class="log" id="log">
+            <h4>Log de génération:</h4>
+            <div id="logContent"></div>
+        </div>
+    </div>
+    
+    <div class="canvas-container">
+        <canvas id="canvas" width="1123" height="794"></canvas>
+    </div>
+
+    <script>
+        let mrImage = new Image();
+        let mmeImage = new Image();
+        let imagesLoaded = 0;
+        
+        function logMessage(message) {
+            const logContent = document.getElementById('logContent');
+            const timestamp = new Date().toLocaleTimeString();
+            logContent.innerHTML += `[${timestamp}] ${message}<br>`;
+            logContent.scrollTop = logContent.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateProgress(current, total, detail = '') {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const progressDetail = document.getElementById('progressDetail');
+            
+            const percentage = (current / total) * 100;
+            progressFill.style.width = percentage + '%';
+            progressText.textContent = `Génération: ${current}/${total} (${Math.round(percentage)}%)`;
+            progressDetail.textContent = detail;
+        }
+        
+        function showProgress() {
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('log').style.display = 'block';
+            document.getElementById('generateBtn').disabled = true;
+        }
+        
+        function hideProgress() {
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('generateBtn').disabled = false;
+        }
+        
+        function onImageLoad() {
+            imagesLoaded++;
+            if (imagesLoaded === 2) {
+                logMessage('✅ Toutes les images sont chargées');
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+        
+        function loadImages() {
+            logMessage('🔄 Chargement des images...');
+            
+            mrImage.onload = onImageLoad;
+            mrImage.onerror = function() {
+                logMessage('❌ Erreur: Impossible de charger "Attestation Ngazidja Mme.png"');
+                alert('Erreur: Le fichier "Attestation Ngazidja Mme.png" est introuvable dans le dossier.');
+            };
+            mrImage.src = 'Attestation Ngazidja Mme.png';
+            
+            mmeImage.onload = onImageLoad;
+            mmeImage.onerror = function() {
+                logMessage('❌ Erreur: Impossible de charger "Attestation Ngazidja Mr.png"');
+                alert('Erreur: Le fichier "Attestation Ngazidja Mr.png" est introuvable dans le dossier.');
+            };
+            mmeImage.src = 'Attestation Ngazidja Mr.png';
+        }
+        
+        function calculateStats() {
+            const names = Object.keys(leaders.Ngazidga || leaders.Ngazidja || {});
+            const total = names.length;
+            let femaleCount = 0;
+            let maleCount = 0;
+            
+            names.forEach(name => {
+                const gender = leaders.Ngazidga?.[name] || leaders.Ngazidja?.[name] || '';
+                if (gender === 'F') {
+                    femaleCount++;
+                } else if (gender === 'H' || gender === 'M') {
+                    maleCount++;
+                }
+            });
+            
+            document.getElementById('totalNames').textContent = total;
+            document.getElementById('femaleCount').textContent = femaleCount;
+            document.getElementById('maleCount').textContent = maleCount;
+            
+            return { total, femaleCount, maleCount };
+        }
+        
+        async function generatePDF() {
+            if (imagesLoaded < 2) {
+                alert('Les images ne sont pas encore chargées. Veuillez patienter...');
+                return;
+            }
+            
+            showProgress();
+            logMessage('🚀 Début de la génération du PDF...');
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('l', 'pt', 'a4'); // 842 x 595 points (landscape)
+            
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Dimensions A4 landscape en pixels (at 96 DPI)
+            const pageWidth = 1123;  // ~297mm (landscape width)
+            const pageHeight = 794;  // ~210mm (landscape height)
+            
+            canvas.width = pageWidth;
+            canvas.height = pageHeight;
+            
+            // Récupérer les données des leaders
+            const leadersData = leaders.Ngazidga || leaders.Ngazidja || {};
+            const names = Object.keys(leadersData);
+            
+            logMessage(`📊 ${names.length} attestations à générer`);
+            
+            let currentPage = 0;
+            let pdfCreated = false;
+            
+            for (let i = 0; i < names.length; i++) {
+                const name = names[i];
+                const gender = leadersData[name];
+                
+                // Déterminer quelle image utiliser
+                let templateImage;
+                let title;
+                if (gender === 'F') {
+                    templateImage = mrImage; // Using mrImage for females (Mme.)
+                    title = 'Mme.';
+                } else if (gender === 'H' || gender === 'M') {
+                    templateImage = mmeImage; // Using mmeImage for males (Mr.)
+                    title = 'Mr.';
+                } else {
+                    // Si le genre n'est pas défini, utiliser Mr. par défaut
+                    templateImage = mmeImage;
+                    title = 'Mr.';
+                    logMessage(`⚠️ Genre non défini pour ${name}, utilisation de Mr.`);
+                }
+                
+                updateProgress(i + 1, names.length, `Génération de l'attestation pour ${name}`);
+                
+                // Effacer le canvas
+                ctx.clearRect(0, 0, pageWidth, pageHeight);
+                
+                // Dessiner l'image de fond
+                ctx.drawImage(templateImage, 0, 0, pageWidth, pageHeight);
+                
+                // Ajouter le nom
+                ctx.fillStyle = '#8B4513'; // Couleur brune pour correspondre au template
+                ctx.font = 'bold 36px Times, serif';
+                ctx.textAlign = 'center'; // Centrer le texte
+                
+                // Position du nom (centrée horizontalement)
+                const nameX = pageWidth / 2; // Centre de la page (561.5 pixels pour landscape 1123px)
+                const nameY = 415; // Position Y approximative (ajustée pour paysage)
+                
+                ctx.fillText(name, nameX, nameY);
+                
+                // Convertir le canvas en image
+                const imgData = canvas.toDataURL('image/png');
+                
+                // Ajouter la page au PDF
+                if (currentPage > 0) {
+                    pdf.addPage();
+                }
+                
+                // Ajouter l'image au PDF (ajuster les dimensions pour A4 paysage)
+                pdf.addImage(imgData, 'PNG', 0, 0, 842, 595);
+                
+                currentPage++;
+                pdfCreated = true;
+                
+                logMessage(`✅ Attestation générée pour ${name} (${title})`);
+                
+                // Petite pause pour éviter de bloquer l'interface
+                if (i % 10 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+            }
+            
+            if (pdfCreated) {
+                // Télécharger le PDF
+                const fileName = `Attestations_Formation_${new Date().toISOString().split('T')[0]}.pdf`;
+                pdf.save(fileName);
+                
+                logMessage(`🎉 PDF généré avec succès: ${fileName}`);
+                logMessage(`📄 ${currentPage} pages créées`);
+                
+                setTimeout(() => {
+                    hideProgress();
+                    alert(`PDF généré avec succès!\n${currentPage} attestations créées.\nFichier: ${fileName}`);
+                }, 500);
+            } else {
+                hideProgress();
+                alert('Aucune attestation n\'a pu être générée.');
+            }
+        }
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            logMessage('🔧 Initialisation de l\'application...');
+            
+            // Vérifier si les données sont disponibles
+            if (typeof leaders === 'undefined') {
+                logMessage('❌ Erreur: leadersnames.js non trouvé ou mal chargé');
+                alert('Erreur: Le fichier leadersnames.js est requis pour fonctionner.');
+                return;
+            }
+            
+            // Calculer les statistiques
+            calculateStats();
+            
+            // Désactiver le bouton jusqu'au chargement des images
+            document.getElementById('generateBtn').disabled = true;
+            
+            // Charger les images
+            loadImages();
+            
+            logMessage('✅ Application initialisée');
+        });
+    </script>
+</body>
+</html>
