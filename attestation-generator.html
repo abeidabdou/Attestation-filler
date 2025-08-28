@@ -137,10 +137,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏆 Générateur d'Attestations de Formation</h1>
+        <h1>Générateur d'Attestations de Formation</h1>
         
         <div class="info">
-            <h3>📋 Instructions:</h3>
+            <h3>Instructions:</h3>
             <ul>
                 <li>Les images PNG des attestations doivent être dans le même dossier</li>
                 <li>Cliquez sur "Générer PDF" pour créer toutes les attestations</li>
@@ -165,7 +165,7 @@
         
         <div class="controls">
             <button id="generateBtn" onclick="generatePDF()">
-                📄 Générer le PDF des Attestations
+                Générer le PDF des Attestations
             </button>
         </div>
         
@@ -225,24 +225,24 @@
         function onImageLoad() {
             imagesLoaded++;
             if (imagesLoaded === 2) {
-                logMessage('✅ Toutes les images sont chargées');
+                logMessage('Toutes les images sont chargées');
                 document.getElementById('generateBtn').disabled = false;
             }
         }
         
         function loadImages() {
-            logMessage('🔄 Chargement des images...');
+            logMessage('Chargement des images...');
             
             mrImage.onload = onImageLoad;
             mrImage.onerror = function() {
-                logMessage('❌ Erreur: Impossible de charger "Attestation Ngazidja Mme.png"');
+                logMessage('Erreur: Impossible de charger "Attestation Ngazidja Mme.png"');
                 alert('Erreur: Le fichier "Attestation Ngazidja Mme.png" est introuvable dans le dossier.');
             };
             mrImage.src = 'Attestation Ngazidja Mme.png';
             
             mmeImage.onload = onImageLoad;
             mmeImage.onerror = function() {
-                logMessage('❌ Erreur: Impossible de charger "Attestation Ngazidja Mr.png"');
+                logMessage('Erreur: Impossible de charger "Attestation Ngazidja Mr.png"');
                 alert('Erreur: Le fichier "Attestation Ngazidja Mr.png" est introuvable dans le dossier.');
             };
             mmeImage.src = 'Attestation Ngazidja Mr.png';
@@ -277,7 +277,7 @@
             }
             
             showProgress();
-            logMessage('🚀 Début de la génération du PDF...');
+            logMessage('Début de la génération du PDF...');
             
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('l', 'pt', 'a4'); // 842 x 595 points (landscape)
@@ -285,7 +285,7 @@
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
             
-            // Dimensions A4 landscape en pixels (at 96 DPI)
+            // Dimensions A4 landscape en pixels (96 DPI)
             const pageWidth = 1123;  // ~297mm (landscape width)
             const pageHeight = 794;  // ~210mm (landscape height)
             
@@ -296,7 +296,7 @@
             const leadersData = leaders.Ngazidga || leaders.Ngazidja || {};
             const names = Object.keys(leadersData);
             
-            logMessage(`📊 ${names.length} attestations à générer`);
+            logMessage(`${names.length} attestations à générer`);
             
             let currentPage = 0;
             let pdfCreated = false;
@@ -354,7 +354,7 @@
                 currentPage++;
                 pdfCreated = true;
                 
-                logMessage(`✅ Attestation générée pour ${name} (${title})`);
+                logMessage(`Attestation générée pour ${name} (${title})`);
                 
                 // Petite pause pour éviter de bloquer l'interface
                 if (i % 10 === 0) {
@@ -367,8 +367,8 @@
                 const fileName = `Attestations_Formation_${new Date().toISOString().split('T')[0]}.pdf`;
                 pdf.save(fileName);
                 
-                logMessage(`🎉 PDF généré avec succès: ${fileName}`);
-                logMessage(`📄 ${currentPage} pages créées`);
+                logMessage(`PDF généré avec succès: ${fileName}`);
+                logMessage(`${currentPage} pages créées`);
                 
                 setTimeout(() => {
                     hideProgress();
@@ -386,7 +386,7 @@
             
             // Vérifier si les données sont disponibles
             if (typeof leaders === 'undefined') {
-                logMessage('❌ Erreur: leadersnames.js non trouvé ou mal chargé');
+                logMessage('Erreur: leadersnames.js non trouvé ou mal chargé');
                 alert('Erreur: Le fichier leadersnames.js est requis pour fonctionner.');
                 return;
             }
@@ -400,8 +400,9 @@
             // Charger les images
             loadImages();
             
-            logMessage('✅ Application initialisée');
+            logMessage('Application initialisée');
         });
     </script>
 </body>
 </html>
+
